@@ -39,11 +39,6 @@ resource "talos_machine_configuration_apply" "controlplane" {
           }
         }
       }),
-      yamlencode({
-        cluster = {
-          allowSchedulingOnControlPlanes = true
-        }
-      }),
     ],
     var.vip != "" ? [
       yamlencode({

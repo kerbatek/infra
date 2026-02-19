@@ -6,8 +6,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   node_name = var.proxmox_node_name
   vm_id     = 8000 + count.index
 
-  machine = "q35"
-  bios    = "ovmf"
+  bios    = "seabios"
 
   agent {
     enabled = true
@@ -20,6 +19,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 
   memory {
     dedicated = var.cp_memory
+    floating  = var.cp_memory
   }
 
   disk {
@@ -28,6 +28,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
     interface    = "virtio0"
     size         = var.cp_disk_size
     discard      = "on"
+    iothread     = "true"
   }
 
   efi_disk {
@@ -69,8 +70,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   node_name = var.proxmox_node_name
   vm_id     = 8010 + count.index
 
-  machine = "q35"
-  bios    = "ovmf"
+  bios    = "seabios"
 
   agent {
     enabled = true
@@ -83,6 +83,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
   memory {
     dedicated = var.worker_memory
+    floating  = var.worker_memory
   }
 
   disk {
@@ -91,6 +92,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     interface    = "virtio0"
     size         = var.worker_disk_size
     discard      = "on"
+    iothread     = "true"
   }
 
   efi_disk {
