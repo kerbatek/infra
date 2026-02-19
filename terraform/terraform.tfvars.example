@@ -1,0 +1,11 @@
+proxmox_endpoint  = "https://192.168.1.10:8006/"
+proxmox_api_token = "root@pam!terraform=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+proxmox_node_name = "pve"
+
+cluster_name      = "homelab"
+cluster_endpoint  = "https://192.168.1.50:6443"
+
+gateway           = "192.168.1.1"
+nameservers       = ["1.1.1.1", "8.8.8.8"]
+control_plane_ips = ["192.168.1.50"]
+worker_ips        = ["192.168.1.51", "192.168.1.52"]
