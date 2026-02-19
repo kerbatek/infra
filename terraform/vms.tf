@@ -6,8 +6,8 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   node_name = var.proxmox_node_name
   vm_id     = 8000 + count.index
 
-  machine = "q35"
-  bios    = "ovmf"
+  machine = "i440fx"
+  bios    = "seabios"
 
   agent {
     enabled = true
@@ -20,6 +20,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 
   memory {
     dedicated = var.cp_memory
+    floating  = var.cp_memory
     floating  = var.cp_memory
   }
 
@@ -72,7 +73,6 @@ resource "proxmox_virtual_environment_vm" "worker" {
   node_name = var.proxmox_node_name
   vm_id     = 8010 + count.index
 
-  machine = "i440fx"
   bios    = "seabios"
 
   agent {
