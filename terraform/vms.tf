@@ -6,7 +6,6 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   node_name = var.proxmox_node_name
   vm_id     = 8000 + count.index
 
-  machine = "i440fx"
   bios    = "seabios"
 
   agent {
@@ -20,6 +19,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 
   memory {
     dedicated = var.cp_memory
+    floating  = var.cp_memory
   }
 
   disk {
@@ -70,7 +70,6 @@ resource "proxmox_virtual_environment_vm" "worker" {
   node_name = var.proxmox_node_name
   vm_id     = 8010 + count.index
 
-  machine = "i440fx"
   bios    = "seabios"
 
   agent {
@@ -84,6 +83,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
   memory {
     dedicated = var.worker_memory
+    floating  = var.worker_memory
   }
 
   disk {
