@@ -3,10 +3,15 @@
 Terraform for a Talos Linux Kubernetes cluster on Proxmox.
 
 ```
-Proxmox VE (128GB)
+Proxmox VE
 ├── talos-cp-1       control plane   2 vCPU · 4GB · 30GB
+├── talos-cp-2       control plane   2 vCPU · 4GB · 30GB
+├── talos-cp-3       control plane   2 vCPU · 4GB · 30GB
 ├── talos-worker-1   worker          4 vCPU · 8GB · 50GB
-└── talos-worker-2   worker          4 vCPU · 8GB · 50GB
+├── talos-worker-2   worker          4 vCPU · 8GB · 50GB
+├── talos-worker-3   worker          4 vCPU · 8GB · 50GB
+├── talos-worker-4   worker          4 vCPU · 8GB · 50GB
+└── talos-worker-5   worker          4 vCPU · 8GB · 50GB
 ```
 
 ## Usage
