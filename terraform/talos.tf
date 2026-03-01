@@ -77,6 +77,16 @@ resource "talos_machine_configuration_apply" "worker" {
           disk  = "/dev/vda"
           image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:v${var.talos_version}"
         }
+        kubelet = {
+          extraMounts = [
+            {
+              destination = "/var/lib/longhorn"
+              type        = "bind"
+              source      = "/var/lib/longhorn"
+              options     = ["bind", "rshared", "rw"]
+            }
+          ]
+        }
       }
     }),
   ]
