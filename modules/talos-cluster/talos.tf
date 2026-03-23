@@ -3,20 +3,19 @@ resource "talos_machine_secrets" "this" {}
 
 // Generate machine configuration for control plane nodes
 data "talos_machine_configuration" "controlplane" {
-  cluster_name     = var.cluster_name
-  machine_type     = "controlplane"
-  cluster_endpoint = var.cluster_endpoint
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
+  cluster_name       = var.cluster_name
+  machine_type       = "controlplane"
+  cluster_endpoint   = var.cluster_endpoint
+  machine_secrets    = talos_machine_secrets.this.machine_secrets
   kubernetes_version = var.kubernetes_version
 }
 
 // Generate machine configuration for worker nodes
 data "talos_machine_configuration" "worker" {
-  cluster_name     = var.cluster_name
-  machine_type     = "worker"
-  cluster_endpoint = var.cluster_endpoint
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
-
+  cluster_name       = var.cluster_name
+  machine_type       = "worker"
+  cluster_endpoint   = var.cluster_endpoint
+  machine_secrets    = talos_machine_secrets.this.machine_secrets
   kubernetes_version = var.kubernetes_version
 }
 
@@ -55,6 +54,14 @@ resource "talos_machine_configuration_apply" "controlplane" {
           }
         }
       })
+    ] : [],
+    var.enable_cilium ? [
+      yamlencode({
+        cluster = {
+          network = { cni = { name = "none" } }
+          proxy   = { disabled = true }
+        }
+      })
     ] : []
   )
 
@@ -70,26 +77,40 @@ resource "talos_machine_configuration_apply" "worker" {
   node                        = var.worker_ips[count.index]
   endpoint                    = var.worker_ips[count.index]
 
-  config_patches = [
-    yamlencode({
-      machine = {
-        install = {
-          disk  = "/dev/vda"
-          image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:v${var.talos_version}"
-        }
-        kubelet = {
-          extraMounts = [
-            {
-              destination = "/var/lib/longhorn"
-              type        = "bind"
-              source      = "/var/lib/longhorn"
-              options     = ["bind", "rshared", "rw"]
+  config_patches = concat(
+    [
+      yamlencode({
+        machine = merge(
+          {
+            install = {
+              disk  = "/dev/vda"
+              image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:v${var.talos_version}"
             }
-          ]
+          },
+          var.enable_longhorn ? {
+            kubelet = {
+              extraMounts = [
+                {
+                  destination = "/var/lib/longhorn"
+                  type        = "bind"
+                  source      = "/var/lib/longhorn"
+                  options     = ["bind", "rshared", "rw"]
+                }
+              ]
+            }
+          } : {}
+        )
+      })
+    ],
+    var.enable_cilium ? [
+      yamlencode({
+        cluster = {
+          network = { cni = { name = "none" } }
+          proxy   = { disabled = true }
         }
-      }
-    }),
-  ]
+      })
+    ] : []
+  )
 
   depends_on = [proxmox_virtual_environment_vm.worker]
 }

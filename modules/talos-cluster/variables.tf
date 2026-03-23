@@ -1,22 +1,9 @@
-// Proxmox connection variables
-variable "proxmox_endpoint" {
-  description = "Proxmox API endpoint URL"
-  type        = string
-}
-
-variable "proxmox_api_token" {
-  description = "Proxmox API token (user!tokenid=secret)"
-  type        = string
-  sensitive   = true
-}
-
 variable "proxmox_node_name" {
   description = "Name of the Proxmox node"
   type        = string
   default     = "pve"
 }
 
-// Talos and Kubernetes variables
 variable "talos_version" {
   description = "Talos Linux version"
   type        = string
@@ -32,7 +19,6 @@ variable "kubernetes_version" {
 variable "cluster_name" {
   description = "Talos cluster name"
   type        = string
-  default     = "url-shortener-cluster"
 }
 
 variable "cluster_endpoint" {
@@ -40,7 +26,6 @@ variable "cluster_endpoint" {
   type        = string
 }
 
-// Network configuration variables
 variable "gateway" {
   description = "Default gateway IP"
   type        = string
@@ -68,16 +53,17 @@ variable "vip" {
   default     = ""
 }
 
-// Node resource configuration variables
 variable "cp_cpu" {
   type    = number
   default = 2
 }
+
 variable "cp_memory" {
   description = "Control plane RAM in MB"
   type        = number
   default     = 4096
 }
+
 variable "cp_disk_size" {
   description = "Control plane disk in GB"
   type        = number
@@ -88,13 +74,43 @@ variable "worker_cpu" {
   type    = number
   default = 4
 }
+
 variable "worker_memory" {
   description = "Worker RAM in MB"
   type        = number
   default     = 8192
 }
+
 variable "worker_disk_size" {
   description = "Worker disk in GB"
   type        = number
   default     = 50
+}
+
+variable "vm_id_offset" {
+  description = "Base VM ID for this cluster (CP = offset+index, workers = offset+10+index)"
+  type        = number
+}
+
+variable "vlan_id" {
+  description = "VLAN ID for cluster network traffic"
+  type        = number
+}
+
+variable "datastore_id" {
+  description = "Proxmox datastore for VM disks and images"
+  type        = string
+  default     = "local-zfs"
+}
+
+variable "enable_longhorn" {
+  description = "Whether to mount /var/lib/longhorn on worker nodes"
+  type        = bool
+  default     = true
+}
+
+variable "enable_cilium" {
+  description = "Disable built-in Flannel CNI and kube-proxy for Cilium"
+  type        = bool
+  default     = false
 }
