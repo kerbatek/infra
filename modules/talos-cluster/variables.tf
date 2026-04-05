@@ -26,9 +26,9 @@ variable "cluster_endpoint" {
   type        = string
 }
 
-variable "gateway" {
-  description = "Default gateway IP"
-  type        = string
+variable "node_gateways" {
+  description = "Per-node gateway IPs (CPs first, then workers)"
+  type        = list(string)
 }
 
 variable "nameservers" {
@@ -92,9 +92,22 @@ variable "vm_id_offset" {
   type        = number
 }
 
-variable "vlan_id" {
-  description = "VLAN ID for cluster network traffic"
+variable "node_vlans" {
+  description = "Per-node VLAN IDs (CPs first, then workers)"
+  type        = list(number)
+}
+
+variable "enable_bgp_vip" {
+  description = "Use kube-vip static pod in BGP mode instead of Talos ARP VIP"
+  type        = bool
+  default     = false
+}
+
+
+variable "etcd_force_new_cluster_node" {
+  description = "Index of the CP node to force-new-cluster on (set to -1 to disable)"
   type        = number
+  default     = -1
 }
 
 variable "datastore_id" {
@@ -111,6 +124,18 @@ variable "enable_longhorn" {
 
 variable "enable_cilium" {
   description = "Disable built-in Flannel CNI and kube-proxy for Cilium"
+  type        = bool
+  default     = false
+}
+
+variable "pod_cidr" {
+  description = "Pod network CIDR — must be unique per cluster when multiple clusters share the same router"
+  type        = string
+  default     = "10.244.0.0/16"
+}
+
+variable "bootstrap_enabled" {
+  description = "Whether to run Talos bootstrap resource (enable only during initial cluster creation/recovery)"
   type        = bool
   default     = false
 }

@@ -39,7 +39,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
         }
       }),
     ],
-    var.vip != "" ? [
+    (var.vip != "" && !var.enable_bgp_vip) ? [
       yamlencode({
         machine = {
           network = {
@@ -55,11 +55,34 @@ resource "talos_machine_configuration_apply" "controlplane" {
         }
       })
     ] : [],
+    (var.vip != "" && var.enable_bgp_vip) ? [
+      yamlencode({
+        cluster = {
+          apiServer = {
+            certSANs = [var.vip]
+          }
+        }
+      })
+    ] : [],
     var.enable_cilium ? [
       yamlencode({
         cluster = {
-          network = { cni = { name = "none" } }
-          proxy   = { disabled = true }
+          network = {
+            cni        = { name = "none" }
+            podSubnets = [var.pod_cidr]
+          }
+          proxy = { disabled = true }
+        }
+      })
+    ] : [],
+    count.index == var.etcd_force_new_cluster_node ? [
+      yamlencode({
+        cluster = {
+          etcd = {
+            extraArgs = {
+              "force-new-cluster" = "true"
+            }
+          }
         }
       })
     ] : []
@@ -105,8 +128,11 @@ resource "talos_machine_configuration_apply" "worker" {
     var.enable_cilium ? [
       yamlencode({
         cluster = {
-          network = { cni = { name = "none" } }
-          proxy   = { disabled = true }
+          network = {
+            cni        = { name = "none" }
+            podSubnets = [var.pod_cidr]
+          }
+          proxy = { disabled = true }
         }
       })
     ] : []
@@ -117,6 +143,8 @@ resource "talos_machine_configuration_apply" "worker" {
 
 // Bootstrap the first control plane node to kick off cluster creation
 resource "talos_machine_bootstrap" "this" {
+  count = var.bootstrap_enabled ? 1 : 0
+
   client_configuration = talos_machine_secrets.this.client_configuration
   node                 = var.control_plane_ips[0]
   endpoint             = var.control_plane_ips[0]

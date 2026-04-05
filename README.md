@@ -5,23 +5,21 @@ Terraform for Talos Linux Kubernetes clusters on Proxmox, using a shared module 
 ## Clusters
 
 ```
-production (VLAN 215 · 10.0.215.0/24)
-├── url-shortener-cp-1      control plane   2 vCPU · 4GB · 30GB   VM 8000
-├── url-shortener-cp-2      control plane   2 vCPU · 4GB · 30GB   VM 8001
-├── url-shortener-cp-3      control plane   2 vCPU · 4GB · 30GB   VM 8002
-├── url-shortener-worker-1  worker          4 vCPU · 8GB · 50GB   VM 8010
-├── url-shortener-worker-2  worker          4 vCPU · 8GB · 50GB   VM 8011
-├── url-shortener-worker-3  worker          4 vCPU · 8GB · 50GB   VM 8012
-├── url-shortener-worker-4  worker          4 vCPU · 8GB · 50GB   VM 8013
-└── url-shortener-worker-5  worker          4 vCPU · 8GB · 50GB   VM 8014
+production (3 control planes, 3 workers, API VIP 10.0.217.5/32)
+├── url-shortener-cp-1      control plane   4 vCPU · 6GB · 30GB   VM 8000   VLAN 2171   10.0.217.1/31   gw 10.0.217.0   ASN 65201
+├── url-shortener-cp-2      control plane   4 vCPU · 6GB · 30GB   VM 8001   VLAN 2172   10.0.217.3/31   gw 10.0.217.2   ASN 65202
+├── url-shortener-cp-3      control plane   4 vCPU · 6GB · 30GB   VM 8002   VLAN 2173   10.0.217.7/31   gw 10.0.217.6   ASN 65203
+├── url-shortener-worker-1  worker          4 vCPU · 8GB · 50GB   VM 8010   VLAN 2174   10.0.217.9/31   gw 10.0.217.8   ASN 65204
+├── url-shortener-worker-2  worker          4 vCPU · 8GB · 50GB   VM 8011   VLAN 2175   10.0.217.11/31  gw 10.0.217.10  ASN 65205
+└── url-shortener-worker-3  worker          4 vCPU · 8GB · 50GB   VM 8012   VLAN 2176   10.0.217.13/31  gw 10.0.217.12  ASN 65206
 
-testing (VLAN 216 · 10.0.216.0/24)
-├── testing-cp-1            control plane   2 vCPU · 2GB · 20GB   VM 9000
-├── testing-cp-2            control plane   2 vCPU · 2GB · 20GB   VM 9001
-├── testing-cp-3            control plane   2 vCPU · 2GB · 20GB   VM 9002
-├── testing-worker-1        worker          2 vCPU · 4GB · 30GB   VM 9010
-├── testing-worker-2        worker          2 vCPU · 4GB · 30GB   VM 9011
-└── testing-worker-3        worker          2 vCPU · 4GB · 30GB   VM 9012
+testing (3 control planes, 3 workers, API VIP 10.0.216.5/32)
+├── testing-cp-1            control plane   3 vCPU · 6GB · 20GB   VM 9000   VLAN 2161   10.0.216.1/31   gw 10.0.216.0   ASN 65101
+├── testing-cp-2            control plane   3 vCPU · 6GB · 20GB   VM 9001   VLAN 2162   10.0.216.3/31   gw 10.0.216.2   ASN 65102
+├── testing-cp-3            control plane   3 vCPU · 6GB · 20GB   VM 9002   VLAN 2163   10.0.216.7/31   gw 10.0.216.6   ASN 65103
+├── testing-worker-1        worker          2 vCPU · 4GB · 30GB   VM 9010   VLAN 2164   10.0.216.9/31   gw 10.0.216.8   ASN 65104
+├── testing-worker-2        worker          2 vCPU · 4GB · 30GB   VM 9011   VLAN 2165   10.0.216.11/31  gw 10.0.216.10  ASN 65105
+└── testing-worker-3        worker          2 vCPU · 4GB · 30GB   VM 9012   VLAN 2166   10.0.216.13/31  gw 10.0.216.12  ASN 65106
 ```
 
 ## Structure
@@ -58,7 +56,7 @@ kubectl get nodes
 ```
 
 ```bash
-# Testing — step 1: provision cluster (requires VLAN 216 pre-configured on Proxmox)
+# Testing — step 1: provision cluster (requires routed /31 links pre-configured on Proxmox and MikroTik)
 cd environments/testing
 cp terraform.tfvars.example terraform.tfvars  # fill in Proxmox credentials
 terraform init
@@ -90,12 +88,18 @@ kubectl --kubeconfig ~/.kube/config-testing apply \
 # ArgoCD (testing) uses manual sync — trigger syncs deliberately, not automatically
 ```
 
-## Prerequisites for Testing Cluster
+## Network Prerequisites
 
-Before running `terraform apply` on testing:
-- VLAN 216 configured on Proxmox host bridge (`vmbr0`) and upstream switch/router
-- Gateway `10.0.216.1` routable
-- `testing` branch in gitops repo exists with MetalLB `peerAddress` updated to `10.0.216.1`
+Before running `terraform apply` for either environment:
+
+- Proxmox host bridge (`vmbr0`) and the upstream switch/router must carry the per-node VLANs for that environment
+- The MikroTik must provide one SVI gateway per node and one eBGP session per node
+- The environment API VIP is a Cilium-managed `/32`, not a router SVI and not a Talos interface VIP
+
+Current environment allocations:
+
+- Production VLANs `2171-2176`, MikroTik ASN `64513`, node ASNs `65201-65206`, API VIP `10.0.217.5/32`
+- Testing VLANs `2161-2166`, MikroTik ASN `64513`, node ASNs `65101-65106`, API VIP `10.0.216.5/32`
 
 ## Notes
 
@@ -109,7 +113,12 @@ to allow Kustomize to reference base resources from parent directories. This is 
 `k8s/overlays/testing/apps/patches/argocd.yaml` and also patched into `argocd-cm` manually
 during bootstrap before the first sync.
 
+**Cilium and API access model:** Both environments use routed `/31` node links, Cilium BGP,
+and kubePrism for node-local API access. Terraform configures the node IPs, VLAN tags, and the
+external cluster endpoint, while GitOps manages the corresponding Cilium BGP resources and the
+Cilium-managed API VIP service.
+
 ## Related
 
-- [url-shortener](https://github.com/kerbatek/url-shortener) — app deployed on the production cluster
 - [gitops](https://github.com/kerbatek/gitops) — ArgoCD apps and Helm charts
+- [portfolio](https://github.com/kerbatek/portfolio) — app deployed on the production cluster

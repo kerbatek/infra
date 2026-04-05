@@ -38,15 +38,15 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 
   network_device {
     bridge  = "vmbr0"
-    vlan_id = var.vlan_id
+    vlan_id = var.node_vlans[count.index]
   }
 
   initialization {
     datastore_id = var.datastore_id
     ip_config {
       ipv4 {
-        address = "${var.control_plane_ips[count.index]}/24"
-        gateway = var.gateway
+        address = "${var.control_plane_ips[count.index]}/31"
+        gateway = var.node_gateways[count.index]
       }
     }
     dns {
@@ -103,15 +103,15 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
   network_device {
     bridge  = "vmbr0"
-    vlan_id = var.vlan_id
+    vlan_id = var.node_vlans[length(var.control_plane_ips) + count.index]
   }
 
   initialization {
     datastore_id = var.datastore_id
     ip_config {
       ipv4 {
-        address = "${var.worker_ips[count.index]}/24"
-        gateway = var.gateway
+        address = "${var.worker_ips[count.index]}/31"
+        gateway = var.node_gateways[length(var.control_plane_ips) + count.index]
       }
     }
     dns {
